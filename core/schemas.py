@@ -27,3 +27,29 @@ ERROR_SCHEMA = {
         "documentation_url": {"type": "string"},
     },
 }
+
+LABEL_SCHEMA = {
+    "type": "object",
+    "required": ["id", "name", "color", "default", "description"],
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "color": {"type": "string"},
+        "default": {"type": "boolean"},
+        "description": {"type": ["string", "null"]},
+    },
+}
+
+MILESTONE_SCHEMA = {
+    "type": "object",
+    "required": ["number", "title", "state", "url"],
+    "properties": {
+        "number": {"type": "integer"},
+        "title": {"type": "string"},
+        "state": {"type": "string", "enum": ["open", "closed"]},
+        "url": {"type": "string"},
+        "description": {"type": ["string", "null"]},
+        "due_on": {"type": ["string", "null"]},
+        "closed_at": {"type": ["string", "null"]},
+    },
+}
