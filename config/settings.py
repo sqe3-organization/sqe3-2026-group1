@@ -1,6 +1,7 @@
 """Values of the Postman environment "GitHub Issues - SQE3", now read from .env."""
 import os
 
+from urllib.parse import quote
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +18,8 @@ MAX_RESPONSE_TIME_MS = int(os.getenv("MAX_RESPONSE_TIME_MS", "2000"))
 # Test data that does not change between runs (collection variables in Postman)
 INVALID_TOKEN = "ghp_thisTokenIsInvalid000000000000000000"
 NON_EXISTENT_ISSUE = 999999999
+NON_EXISTENT_MILESTONE = 999999999
+NON_EXISTENT_REPO = "repo-that-does-not-exist-xyz"
 LOCK_REASONS = ["off-topic", "too heated", "resolved", "spam"]
 
 
@@ -25,6 +28,10 @@ class Endpoints:
     ISSUES = f"/repos/{OWNER}/{REPO}/issues"
     PUBLIC_REPOSITORY = f"/repos/{PUBLIC_OWNER}/{PUBLIC_REPO}"
     PUBLIC_ISSUES = f"{PUBLIC_REPOSITORY}/issues"
+    LABELS = f"/repos/{OWNER}/{REPO}/labels"
+    MILESTONES = f"/repos/{OWNER}/{REPO}/milestones"
+    PUBLIC_LABELS = f"{PUBLIC_REPOSITORY}/labels"
+    PUBLIC_MILESTONES = f"{PUBLIC_REPOSITORY}/milestones"
 
     @staticmethod
     def issue(number):
@@ -33,3 +40,12 @@ class Endpoints:
     @staticmethod
     def issue_lock(number):
         return f"/repos/{OWNER}/{REPO}/issues/{number}/lock"
+    
+    @staticmethod
+    def label(name):
+        """Label names can have spaces ("good first issue"), so the name is URL-encoded."""
+        return f"/repos/{OWNER}/{REPO}/labels/{quote(name, safe='')}"
+
+    @staticmethod
+    def milestone(number):
+        return f"/repos/{OWNER}/{REPO}/milestones/{number}"
