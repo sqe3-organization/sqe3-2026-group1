@@ -32,6 +32,8 @@ class Endpoints:
     MILESTONES = f"/repos/{OWNER}/{REPO}/milestones"
     PUBLIC_LABELS = f"{PUBLIC_REPOSITORY}/labels"
     PUBLIC_MILESTONES = f"{PUBLIC_REPOSITORY}/milestones"
+    GISTS = "/gists"
+    PUBLIC_GISTS = "/gists/public"
 
     @staticmethod
     def issue(number):
@@ -49,3 +51,7 @@ class Endpoints:
     @staticmethod
     def milestone(number):
         return f"/repos/{OWNER}/{REPO}/milestones/{number}"
+    
+    @staticmethod
+    def gist(gist_id):
+        return f"/gists/{gist_id}"
