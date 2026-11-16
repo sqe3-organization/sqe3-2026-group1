@@ -100,3 +100,59 @@ tests/milestones/            test_milestones_post, get, patch, delete, auth
 - The read-only milestone tests share three milestones created once by the `read_only_milestones` module fixture in `test_milestones_get.py`.
 - `TC_LABEL_POST_002` fails on purpose: the endpoint accepts a label without color (201) instead of the 422 expected in Lab 1. The expected result was not changed.
 - Test cases `*_AUTH_*` and `*_PERM_*` were added after the feedback of Group 2; they are not in the Lab 1 table.
+
+---
+
+# Gists
+
+API tests for the **Gists** feature, migrated from the Lab 2 Postman collection.
+
+The suite includes 21 original test cases, plus the cases added after Group 2 feedback: `TC_GIST_AUTH_001` and `TC_GIST_PATCH_006`. It also includes a second version of `TC_GIST_PATCH_004`, which repeats the rename-then-remove sequence from the Postman collection.
+
+## Setup for these tests
+
+Gists belong to the user account, not to a repository, so `OWNER` and `REPO` are not used.
+
+The `.env` file only needs:
+
+```env
+GITHUB_TOKEN=<token that can create, update and delete Gists>
+```
+
+The token must have the following permissions:
+
+- **Fine-grained personal access token:** `Gists` user permissions with `write` access.
+- **Personal access token (classic):** `gist` scope.
+
+If a fine-grained token returns `401` or `403`, check its permissions before trying a classic token with the `gist` scope.
+
+See the [official GitHub Gists API documentation](https://docs.github.com/en/rest/gists/gists).
+
+## Run
+
+```bash
+pytest tests/gists                                  # All the Gists tests
+pytest tests/gists -m "negative or boundary"        # By test type
+pytest tests/gists/test_gists_patch.py -k patch_004 # One test case
+pytest tests/poc/test_poc_gists.py                  # Proofs of concept
+```
+
+## Structure
+
+```text
+core/gist_helpers.py         Create, get, delete and cleanup of Gists
+core/assertions.py           Shared response and error assertions
+tests/gists/conftest.py      Fixtures: gist_ids_to_clean_up, existing_gist,
+                             existing_public_gist and deleted_gist
+tests/gists/                 Gists tests: POST, GET, PATCH, DELETE and auth
+tests/poc/test_poc_gists.py  Proofs of concept for Gists
+```
+
+## Notes
+
+- Every test creates its own Gist with the `qa-pm-` description prefix and cleans it up after execution. A session fixture also removes leftover test Gists before and after the test session.
+- A `404` response is accepted during cleanup because some tests delete their Gist as part of the test itself.
+- A 0.5-second pause after each test follows the same idea as Newman `--delay-request 500` and helps reduce the risk of secondary rate limits when creating content.
+- The default Gist fixture contains **two files** (`hello.py` and `keep.txt`). Keeping a second file allows tests to remove one without leaving the Gist empty, which GitHub does not accept.
+- Tests for `422` responses check the status code, error schema and message content. Exact message text can be added once confirmed against the actual GitHub response.
+- Public Gists can be retrieved without authentication. Creating, updating and deleting Gists requires an authenticated client.
