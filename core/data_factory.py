@@ -18,7 +18,7 @@ def long_text(length):
     return "x" * length
 
 def _short_id(tc_id):
-    """"tc_label_post_001" -> "label-post-001" (names stay under the 50 characters of a label)."""
+    """tc_label_post_001" -> "label-post-001" (names stay under the 50 characters of a label)."""
     return tc_id.lower().replace("tc_", "", 1).replace("_", "-")
 
 

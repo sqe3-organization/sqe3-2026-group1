@@ -1,6 +1,5 @@
 """Values of the Postman environment "GitHub Issues - SQE3", now read from .env."""
 import os
-
 from urllib.parse import quote
 from dotenv import load_dotenv
 
@@ -20,6 +19,7 @@ INVALID_TOKEN = "ghp_thisTokenIsInvalid000000000000000000"
 NON_EXISTENT_ISSUE = 999999999
 NON_EXISTENT_MILESTONE = 999999999
 NON_EXISTENT_REPO = "repo-that-does-not-exist-xyz"
+NON_EXISTENT_GIST = "123456789abcdef123456789"
 LOCK_REASONS = ["off-topic", "too heated", "resolved", "spam"]
 
 
@@ -42,16 +42,16 @@ class Endpoints:
     @staticmethod
     def issue_lock(number):
         return f"/repos/{OWNER}/{REPO}/issues/{number}/lock"
-    
+
     @staticmethod
     def label(name):
-        """Label names can have spaces ("good first issue"), so the name is URL-encoded."""
+        """Label names can have spaces, so the name is URL-encoded."""
         return f"/repos/{OWNER}/{REPO}/labels/{quote(name, safe='')}"
 
     @staticmethod
     def milestone(number):
         return f"/repos/{OWNER}/{REPO}/milestones/{number}"
-    
+
     @staticmethod
     def gist(gist_id):
         return f"/gists/{gist_id}"
