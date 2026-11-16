@@ -1,4 +1,6 @@
 """Reusable checks. In Postman the common ones lived in the collection Tests tab."""
+import json
+
 from jsonschema import validate
 
 from config import settings
@@ -23,5 +25,13 @@ def assert_error(response, status, message):
     """Error responses: status, message and error schema in one call."""
     assert response.status_code == status
     assert message in response.json()["message"]
+    assert_schema(response.json(), ERROR_SCHEMA)
+    assert_common(response)
+
+def assert_error_contains(response, status, text):
+    """Error responses whose message does not name the field (for example 422 on labels and milestones):
+    status, the text anywhere in the error body, error schema and common checks."""
+    assert response.status_code == status, f"expected {status}, got {response.status_code}"
+    assert text in json.dumps(response.json()), f"'{text}' not found in {response.json()}"
     assert_schema(response.json(), ERROR_SCHEMA)
     assert_common(response)

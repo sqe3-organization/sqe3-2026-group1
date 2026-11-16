@@ -54,3 +54,49 @@ tests/issues/           one file per endpoint: auth, post, patch, get, lock, e2e
 - Markers: `smoke`, `negative`, `boundary`, `e2e`, `no_token` (declared in `pytest.ini`, `--strict-markers` on).
 - Every test checks status code, headers, body and, where it applies, schema and data integrity (a second GET).
 - Each test creates its own data through fixtures and cleans it up after `yield`. GitHub does not allow deleting issues, so cleanup closes them as `not_planned`.
+
+---
+
+# Labels and Milestones 
+
+API tests for the **Labels** and **Milestones** features, migrated from the Lab 2 Postman collection: 49 test cases (20 for Labels and 29 for Milestones). They use the same framework as the Issues tests.
+
+## Setup for these tests
+
+Each member tests in their own repository, so `.env` must point to it:
+
+```
+OWNER=<your GitHub user>
+REPO=<your test repository>
+GITHUB_TOKEN=<token with write access to Issues on that repository>
+```
+
+Labels and milestones are managed with the **Issues** permission of a fine-grained token. The repository must be public: the authentication tests read the result without a token.
+
+## Run
+
+```bash
+pytest tests/labels tests/milestones                   # the 49 test cases
+pytest tests/labels                                    # only Labels
+pytest tests/milestones -m "negative or boundary"      # by type of test
+pytest tests/poc/test_poc_labels_milestones.py         # proofs of concept
+```
+
+## Structure
+
+```
+core/label_helpers.py        create / rename / delete / cleanup of labels
+core/milestone_helpers.py    create / delete / cleanup of milestones
+core/label_assertions.py     checks shared by the Labels tests
+tests/labels/conftest.py     fixtures: label_names_to_clean_up, existing_label, deleted_label, renamed_label
+tests/milestones/conftest.py fixtures: milestone_numbers_to_clean_up, existing_milestone, deleted_milestone
+tests/labels/                test_labels_post, get, patch, delete, auth
+tests/milestones/            test_milestones_post, get, patch, delete, auth
+```
+
+## Notes
+
+- Every test creates its own data with the prefix `qa-pm-` and deletes it after `yield` (labels and milestones can be deleted through the API, unlike issues). A session fixture also removes any `qa-pm-` leftovers before and after the run.
+- The read-only milestone tests share three milestones created once by the `read_only_milestones` module fixture in `test_milestones_get.py`.
+- `TC_LABEL_POST_002` fails on purpose: the endpoint accepts a label without color (201) instead of the 422 expected in Lab 1. The expected result was not changed.
+- Test cases `*_AUTH_*` and `*_PERM_*` were added after the feedback of Group 2; they are not in the Lab 1 table.
