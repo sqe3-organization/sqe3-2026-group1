@@ -53,3 +53,26 @@ MILESTONE_SCHEMA = {
         "closed_at": {"type": ["string", "null"]},
     },
 }
+
+GIST_SCHEMA = {
+    "type": "object",
+    "required": ["id", "url", "html_url", "public", "description", "files"],
+    "properties": {
+        "id": {"type": "string"},
+        "url": {"type": "string"},
+        "html_url": {"type": "string"},
+        "public": {"type": "boolean"},
+        "description": {"type": ["string", "null"]},
+        "files": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "filename": {"type": "string"},
+                    "content": {"type": "string"},
+                    "size": {"type": "integer"},
+                },
+            },
+        },
+    },
+}

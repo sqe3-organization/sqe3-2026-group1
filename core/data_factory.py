@@ -18,7 +18,7 @@ def long_text(length):
     return "x" * length
 
 def _short_id(tc_id):
-    """"tc_label_post_001" -> "label-post-001" (names stay under the 50 characters of a label)."""
+    """tc_label_post_001" -> "label-post-001" (names stay under the 50 characters of a label)."""
     return tc_id.lower().replace("tc_", "", 1).replace("_", "-")
 
 
@@ -33,3 +33,11 @@ def milestone_title(tc_id):
 
 def description(length):
     return "a" * length
+
+def gist_description(tc_id):
+    """Every test Gist starts with qa-pm- so the session cleanup can find leftovers."""
+    return f"qa-pm-{_short_id(tc_id)}-{uuid.uuid4().hex[:6]}"
+
+
+def file_content():
+    return fake.paragraph(nb_sentences=2)
