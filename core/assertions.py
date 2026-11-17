@@ -35,3 +35,23 @@ def assert_error_contains(response, status, text):
     assert text in json.dumps(response.json()), f"'{text}' not found in {response.json()}"
     assert_schema(response.json(), ERROR_SCHEMA)
     assert_common(response)
+
+
+NO_CONTENT_STATUS_CODE = 204
+NEXT_PAGE_LINK = "next"
+LAST_PAGE_LINK = "last"
+
+
+def assert_no_content(response):
+    assert response.status_code == NO_CONTENT_STATUS_CODE
+    assert_common(response)
+    assert response.text == ""
+
+
+def assert_has_more_pages(response):
+    assert NEXT_PAGE_LINK in response.links
+    assert LAST_PAGE_LINK in response.links
+
+
+def assert_is_single_page(response):
+    assert NEXT_PAGE_LINK not in response.links
