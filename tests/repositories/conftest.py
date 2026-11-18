@@ -5,8 +5,10 @@ import pytest
 from config import settings
 from config.settings import Endpoints
 from core.api_client import GitHubClient
+from core.repo_helpers import cleanup_repos, delete_leftovers, pause
 
 
+# ----------------------------------------------------------------- clients (session scope)
 @pytest.fixture(scope="session")
 def repo_only_client():
     """Classic token with the repo scope only (tokenRepoOnly in Postman): it cannot delete repositories."""
@@ -29,3 +31,21 @@ def read_repo_path():
     if not settings.READ_REPO:
         pytest.skip("READ_REPO is empty in .env")
     return Endpoints.READ_REPOSITORY
+
+
+# ----------------------------------------------------------------- cleanup
+@pytest.fixture(scope="session", autouse=True)
+def leftovers_cleanup(github):
+    if settings.TOKEN:
+        delete_leftovers(github)
+    yield
+    if settings.TOKEN:
+        delete_leftovers(github)
+
+
+@pytest.fixture
+def repo_names_to_clean_up(github):
+    names = []
+    yield names
+    cleanup_repos(github, names)
+    pause()
