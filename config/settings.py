@@ -14,6 +14,12 @@ PUBLIC_OWNER = os.getenv("PUBLIC_OWNER", "octocat")
 PUBLIC_REPO = os.getenv("PUBLIC_REPO", "Hello-World")
 MAX_RESPONSE_TIME_MS = int(os.getenv("MAX_RESPONSE_TIME_MS", "2000"))
 
+# Repositories module: the read-only tests use a private repository of OWNER (readRepo in Postman)
+READ_REPO = os.getenv("READ_REPO", "")
+TOKEN_REPO_ONLY = os.getenv("TOKEN_REPO_ONLY", "")  # classic token with the repo scope only
+TOKEN_NO_ADMIN = os.getenv("TOKEN_NO_ADMIN", "")  # fine-grained token without Administration
+REPO_PAUSE_SECONDS = float(os.getenv("REPO_PAUSE_SECONDS", "2"))  # pause after tests that create repositories
+
 # Test data that does not change between runs (collection variables in Postman)
 INVALID_TOKEN = "ghp_thisTokenIsInvalid000000000000000000"
 NON_EXISTENT_ISSUE = 999999999
@@ -21,6 +27,7 @@ NON_EXISTENT_MILESTONE = 999999999
 NON_EXISTENT_REPO = "repo-that-does-not-exist-xyz"
 NON_EXISTENT_GIST = "123456789abcdef123456789"
 LOCK_REASONS = ["off-topic", "too heated", "resolved", "spam"]
+TEST_REPO_PREFIX = "qa-pm-"  # cleanup deletes only repositories whose name starts with this
 
 
 class Endpoints:
@@ -34,6 +41,8 @@ class Endpoints:
     PUBLIC_MILESTONES = f"{PUBLIC_REPOSITORY}/milestones"
     GISTS = "/gists"
     PUBLIC_GISTS = "/gists/public"
+    USER_REPOS = "/user/repos"
+    READ_REPOSITORY = f"/repos/{OWNER}/{READ_REPO}"
 
     @staticmethod
     def issue(number):
@@ -55,3 +64,7 @@ class Endpoints:
     @staticmethod
     def gist(gist_id):
         return f"/gists/{gist_id}"
+
+    @staticmethod
+    def repository(name):
+        return f"/repos/{OWNER}/{name}"

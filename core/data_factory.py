@@ -2,6 +2,7 @@
 import uuid
 
 from faker import Faker
+from config import settings
 
 fake = Faker()
 
@@ -41,3 +42,8 @@ def gist_description(tc_id):
 
 def file_content():
     return fake.paragraph(nb_sentences=2)
+    
+def repo_name(tc_id):
+    """Every test repository starts with settings.TEST_REPO_PREFIX so the cleanup can find leftovers
+    and never touches any other repository of the account."""
+    return f"{settings.TEST_REPO_PREFIX}{_short_id(tc_id)}-{uuid.uuid4().hex[:6]}"
