@@ -76,3 +76,17 @@ GIST_SCHEMA = {
         },
     },
 }
+
+REPO_SCHEMA = {
+    "type": "object",
+    "required": ["id", "name", "full_name", "html_url", "created_at", "private"],
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "full_name": {"type": "string"},
+        "html_url": {"type": "string"},
+        "created_at": {"type": "string"},
+        "private": {"type": "boolean"},
+        "visibility": {"type": "string"},
+    },
+}
