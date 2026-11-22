@@ -8,6 +8,7 @@ import pytest
 
 from config import settings
 from core.api_client import GitHubClient
+from core.request_manager import RequestManager
 from core.issue_helpers import cleanup_issues, close_issue, create_issue, lock_issue
 
 
@@ -21,7 +22,18 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip)
 
 
+# ----------------------------------------------------------------- request manager (Singleton)
+@pytest.fixture(scope="session", autouse=True)
+def request_manager():
+    """[Pre and Cleanup] The only RequestManager of the run: every client below shares its session.
+    Its connections are closed once, after the last test."""
+    manager = RequestManager.get_instance()
+    yield manager
+    RequestManager.reset()
+
+
 # ----------------------------------------------------------------- clients (session scope)
+# Each client is one identity (token); all of them send through the same RequestManager.
 @pytest.fixture(scope="session")
 def github():
     return GitHubClient()

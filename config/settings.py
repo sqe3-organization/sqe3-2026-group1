@@ -13,6 +13,7 @@ REPO = os.getenv("REPO", "sqe3-issues-test")
 PUBLIC_OWNER = os.getenv("PUBLIC_OWNER", "octocat")
 PUBLIC_REPO = os.getenv("PUBLIC_REPO", "Hello-World")
 MAX_RESPONSE_TIME_MS = int(os.getenv("MAX_RESPONSE_TIME_MS", "2000"))
+REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "30"))  # seconds, used by the RequestManager
 
 # Repositories module: the read-only tests use a private repository of OWNER (readRepo in Postman)
 READ_REPO = os.getenv("READ_REPO", "")
