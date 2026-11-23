@@ -58,7 +58,7 @@ def cleanup_gists(client, gist_ids):
     """
     for gist_id in gist_ids:
         response = delete_gist(client, gist_id)
-        log_cleanup_result(logger, f"gist {gist_id}", response, action_done="deleted")
+        log_cleanup_result(logger, f"gist {gist_id}", response)
 
     gist_ids.clear()
 

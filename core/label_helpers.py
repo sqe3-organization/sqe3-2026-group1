@@ -45,7 +45,7 @@ def cleanup_labels(client, names):
     It does not raise: a failed cleanup must not hide the real result of the test."""
     for name in names:
         response = delete_label(client, name)
-        log_cleanup_result(logger, f"label {name}", response, action_done="deleted")
+        log_cleanup_result(logger, f"label {name}", response)
     names.clear()
 
 

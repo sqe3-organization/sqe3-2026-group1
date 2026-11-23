@@ -4,11 +4,10 @@
 They replace the pre-request scripts and the "99 - Teardown" folder of the Postman collection.
 """
 import time
-from http import HTTPStatus
 
 from config.settings import Endpoints
 from core import data_factory
-from core.cleanup_logging import log_cleanup_result
+from core.cleanup_logging import CLOSE_AS_NOT_PLANNED_RULE, log_cleanup_result
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -40,14 +39,7 @@ def cleanup_issues(client, numbers):
     It does not raise: a failed cleanup must not hide the real result of the test."""
     for number in numbers:
         response = client.patch(Endpoints.issue(number), json={"state": "closed", "state_reason": "not_planned"})
-        log_cleanup_result(
-            logger,
-            f"issue #{number}",
-            response,
-            action_done="closed as not_planned",
-            expected_status=HTTPStatus.OK,
-            tolerated_status=None,
-        )
+        log_cleanup_result(logger, f"issue #{number}", response, CLOSE_AS_NOT_PLANNED_RULE)
     numbers.clear()
 
 

@@ -43,7 +43,7 @@ def cleanup_repos(client, names):
             logger.warning("Cleanup skipped: repository %s is not a test repository", name)
             continue
         response = client.delete(Endpoints.repository(name))
-        log_cleanup_result(logger, f"repository {name}", response, action_done="deleted")
+        log_cleanup_result(logger, f"repository {name}", response)
     names.clear()
 
 

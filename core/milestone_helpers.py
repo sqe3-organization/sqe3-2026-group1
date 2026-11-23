@@ -39,7 +39,7 @@ def cleanup_milestones(client, numbers):
     It does not raise: a failed cleanup must not hide the real result of the test."""
     for number in numbers:
         response = delete_milestone(client, number)
-        log_cleanup_result(logger, f"milestone #{number}", response, action_done="deleted")
+        log_cleanup_result(logger, f"milestone #{number}", response)
     numbers.clear()
 
 

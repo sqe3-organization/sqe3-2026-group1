@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from core import issue_helpers, label_helpers, repo_helpers
-from core.cleanup_logging import log_cleanup_result
+from core.cleanup_logging import CleanupRule, log_cleanup_result
 from core.logger import configure_logging, shutdown_logging
 
 pytestmark = pytest.mark.no_token
@@ -22,13 +22,13 @@ class FakeClient:
     def __init__(self, status_code, body=None):
         self.response = SimpleNamespace(status_code=status_code, json=lambda: body)
 
-    def post(self, path, json=None):
+    def post(self, *_ignored_arguments, **_ignored_keyword_arguments):
         return self.response
 
-    def patch(self, path, json=None):
+    def patch(self, *_ignored_arguments, **_ignored_keyword_arguments):
         return self.response
 
-    def delete(self, path):
+    def delete(self, *_ignored_arguments, **_ignored_keyword_arguments):
         return self.response
 
 
@@ -69,7 +69,7 @@ def test_cleanup_logs_info_when_the_resource_is_deleted(tmp_path):
     label_helpers.cleanup_labels(FakeClient(204), names)
 
     assert f"INFO    | Cleanup: label {LABEL_NAME} deleted" in read_log_file(log_file_path)
-    assert names == []
+    assert not names
 
 
 def test_cleanup_logs_a_warning_when_the_resource_was_already_deleted(tmp_path):
@@ -89,7 +89,7 @@ def test_cleanup_logs_an_error_and_does_not_raise_when_it_fails(tmp_path):
     assert f"ERROR   | Cleanup failed for label {LABEL_NAME} | expected status 204, got 500" in read_log_file(
         log_file_path
     )
-    assert names == []
+    assert not names
 
 
 def test_issue_cleanup_does_not_tolerate_a_missing_issue(tmp_path):
@@ -113,8 +113,9 @@ def test_cleanup_of_a_repository_that_is_not_a_test_repository_is_skipped_with_a
 def test_log_cleanup_result_uses_the_action_given_by_the_caller(tmp_path):
     log_file_path = configure_logging("INFO", tmp_path)
     logger = label_helpers.logger
+    rule = CleanupRule(action_done="closed as not_planned", expected_status=200)
 
-    log_cleanup_result(logger, "issue #3", SimpleNamespace(status_code=200), "closed as not_planned", expected_status=200)
+    log_cleanup_result(logger, "issue #3", SimpleNamespace(status_code=200), rule)
 
     assert "INFO    | Cleanup: issue #3 closed as not_planned" in read_log_file(log_file_path)
 
