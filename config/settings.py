@@ -14,6 +14,8 @@ PUBLIC_OWNER = os.getenv("PUBLIC_OWNER", "octocat")
 PUBLIC_REPO = os.getenv("PUBLIC_REPO", "Hello-World")
 MAX_RESPONSE_TIME_MS = int(os.getenv("MAX_RESPONSE_TIME_MS", "2000"))
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "30"))  # seconds, used by the RequestManager
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_DIRECTORY = os.getenv("LOG_DIRECTORY", "logs")
 
 # Repositories module: the read-only tests use a private repository of OWNER (readRepo in Postman)
 READ_REPO = os.getenv("READ_REPO", "")
