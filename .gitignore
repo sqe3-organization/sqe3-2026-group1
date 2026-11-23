@@ -4,3 +4,4 @@ __pycache__/
 .env
 reports/
 logs/
+.venv_old/

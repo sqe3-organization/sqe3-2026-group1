@@ -98,7 +98,11 @@ def parse_level(level_name):
     if normalized_name not in VALID_LEVEL_NAMES:
         valid_levels = ", ".join(VALID_LEVEL_NAMES)
         raise ValueError(f"Invalid LOG_LEVEL '{level_name}'. Use one of: {valid_levels}")
-    return logging.getLevelNamesMapping()[normalized_name]
+    # logging.getLevelNamesMapping() was added in Python 3.11.
+    # On Python 3.10 and earlier we build an equivalent mapping from the internal table.
+    get_mapping = getattr(logging, "getLevelNamesMapping", None)
+    mapping = get_mapping() if get_mapping is not None else dict(logging._nameToLevel)
+    return mapping[normalized_name]
 
 
 def build_log_file_path(directory):

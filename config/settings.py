@@ -46,6 +46,8 @@ class Endpoints:
     PUBLIC_GISTS = "/gists/public"
     USER_REPOS = "/user/repos"
     READ_REPOSITORY = f"/repos/{OWNER}/{READ_REPO}"
+    SEARCH_REPOSITORIES = "/search/repositories"
+    SEARCH_ISSUES = "/search/issues"
 
     @staticmethod
     def issue(number):
