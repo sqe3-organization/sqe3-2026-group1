@@ -77,6 +77,52 @@ GIST_SCHEMA = {
     },
 }
 
+SEARCH_REPOSITORIES_SCHEMA = {
+    "type": "object",
+    "required": ["total_count", "incomplete_results", "items"],
+    "properties": {
+        "total_count": {"type": "integer"},
+        "incomplete_results": {"type": "boolean"},
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "name", "full_name", "html_url", "private"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "full_name": {"type": "string"},
+                    "html_url": {"type": "string"},
+                    "private": {"type": "boolean"},
+                },
+            },
+        },
+    },
+}
+
+SEARCH_ISSUES_SCHEMA = {
+    "type": "object",
+    "required": ["total_count", "incomplete_results", "items"],
+    "properties": {
+        "total_count": {"type": "integer"},
+        "incomplete_results": {"type": "boolean"},
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "number", "title", "state", "html_url"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "number": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "state": {"type": "string"},
+                    "html_url": {"type": "string"},
+                },
+            },
+        },
+    },
+}
+
 REPO_SCHEMA = {
     "type": "object",
     "required": ["id", "name", "full_name", "html_url", "created_at", "private"],
