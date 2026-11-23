@@ -143,3 +143,15 @@ def test_a_file_only_logger_writes_to_the_file_but_not_to_the_console(tmp_path, 
     console_output = capsys.readouterr().out
     assert "START" not in console_output
     assert "business message" in console_output
+
+def test_a_file_only_logger_writes_to_the_file_but_not_to_the_console(tmp_path, capsys):
+    log_file_path = configure_logging("INFO", tmp_path)
+
+    get_file_only_logger("unit_test").info("START tests/issues/test_post.py::test_create")
+    get_logger("unit_test").info("business message")
+    shutdown_logging()
+
+    assert "START tests/issues/test_post.py::test_create" in read_log_file(log_file_path)
+    console_output = capsys.readouterr().out
+    assert "START" not in console_output
+    assert "business message" in console_output

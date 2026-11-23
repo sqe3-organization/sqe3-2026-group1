@@ -25,6 +25,7 @@ from pathlib import Path
 from config import settings
 
 FRAMEWORK_LOGGER_NAME = "framework"
+FILE_ONLY_LOGGER_PREFIX = f"{FRAMEWORK_LOGGER_NAME}.file_only."
 VALID_LEVEL_NAMES = ("DEBUG", "INFO", "WARNING", "ERROR")
 
 LOG_FIELD_SEPARATOR = " | "
@@ -65,6 +66,9 @@ def add_execution_context_to_record(record):
     record.worker = os.getenv(XDIST_WORKER_ENVIRONMENT_VARIABLE, MAIN_PROCESS_NAME)
     return True
 
+def hide_file_only_records(record):
+    """The console skips the records of the loggers created by get_file_only_logger."""
+    return not record.name.startswith(FILE_ONLY_LOGGER_PREFIX)
 
 class ConsoleHandler(logging.StreamHandler):
     """Writes to the sys.stdout that is active at the moment of each message.
@@ -148,6 +152,7 @@ def configure_logging(level_name=None, directory=None):
     framework_logger.setLevel(level)
     framework_logger.propagate = False
     console_handler = ConsoleHandler()
+    console_handler.addFilter(hide_file_only_records)
     file_handler = RunFileHandler(log_file_path, encoding="utf-8")
     framework_logger.addHandler(attach_team_format(console_handler, level))
     framework_logger.addHandler(attach_team_format(file_handler, level))
@@ -166,3 +171,11 @@ def get_logger(module_name):
     """Returns the logger of a module. The first call configures the outputs."""
     configure_logging()
     return logging.getLogger(f"{FRAMEWORK_LOGGER_NAME}.{module_name}")
+
+def get_file_only_logger(module_name):
+    """Like get_logger, but its messages are written only to the log file.
+
+    It is used for the life cycle of the run (start and result of each test, fixtures),
+    which pytest already shows in the console and would be repeated between its lines.
+    """
+    return get_logger(f"file_only.{module_name}")
