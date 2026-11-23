@@ -2,42 +2,24 @@
 
 They do not call GitHub: they only write to a temporary folder, so they run without a token.
 """
-import logging
 import re
 
 import pytest
 
-from core import logger as framework_logging
 from core.logger import (
-    FRAMEWORK_LOGGER_NAME,
     XDIST_WORKER_ENVIRONMENT_VARIABLE,
     configure_logging,
+    get_file_only_logger,
     get_framework_handlers,
     get_logger,
     shutdown_logging,
 )
 
-pytestmark = [pytest.mark.no_token, pytest.mark.usefixtures("isolated_logging")]
+pytestmark = pytest.mark.no_token
 
 TEAM_LOG_LINE_PATTERN = re.compile(
     r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \| \S+ \| \S+ \| (DEBUG|INFO|WARNING|ERROR)\s* \| .+$"
 )
-
-
-@pytest.fixture
-def isolated_logging(monkeypatch):
-    """Lets each test configure its own outputs without touching the ones of the real run."""
-    framework_logger = logging.getLogger(FRAMEWORK_LOGGER_NAME)
-    handlers_of_the_run = get_framework_handlers()
-    level_of_the_run = framework_logger.level
-    for handler in handlers_of_the_run:
-        framework_logger.removeHandler(handler)
-    monkeypatch.setenv(framework_logging.RUN_ID_ENVIRONMENT_VARIABLE, "unit_test_run")
-    yield
-    shutdown_logging()
-    for handler in handlers_of_the_run:
-        framework_logger.addHandler(handler)
-    framework_logger.setLevel(level_of_the_run)
 
 
 def read_log_file(log_file_path):
@@ -148,3 +130,16 @@ def test_configuring_twice_does_not_duplicate_the_outputs(tmp_path):
 def test_an_unknown_level_is_rejected_with_a_clear_message(tmp_path):
     with pytest.raises(ValueError, match="Invalid LOG_LEVEL 'LOUD'"):
         configure_logging("LOUD", tmp_path)
+
+
+def test_a_file_only_logger_writes_to_the_file_but_not_to_the_console(tmp_path, capsys):
+    log_file_path = configure_logging("INFO", tmp_path)
+
+    get_file_only_logger("unit_test").info("START tests/issues/test_post.py::test_create")
+    get_logger("unit_test").info("business message")
+    shutdown_logging()
+
+    assert "START tests/issues/test_post.py::test_create" in read_log_file(log_file_path)
+    console_output = capsys.readouterr().out
+    assert "START" not in console_output
+    assert "business message" in console_output

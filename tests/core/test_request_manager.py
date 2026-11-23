@@ -2,24 +2,63 @@
 
 They do not call GitHub: the session's request method is replaced, so they run without a token.
 """
+import logging
 import threading
 
 import pytest
+import requests
 
 from config import settings
 from core.api_client import GitHubClient
-from core.request_manager import RequestManager
+from core.logger import FRAMEWORK_LOGGER_NAME
+from core.request_manager import MAX_LOGGED_BODY_CHARACTERS, RequestManager
 
 pytestmark = pytest.mark.no_token
+
+
+def build_fake_response(status_code=200, body=""):
+    """A response that was never sent over the network."""
+    response = requests.Response()
+    response.status_code = status_code
+    response._content = body.encode()  # pylint: disable=protected-access
+    return response
 
 
 @pytest.fixture
 def sent(monkeypatch):
     """Captures the arguments of every request the RequestManager sends."""
     calls = []
-    manager = RequestManager.get_instance()
-    monkeypatch.setattr(manager.session, "request", lambda method, url, **kwargs: calls.append((method, url, kwargs)))
+
+    def fake_request(method, url, **kwargs):
+        calls.append((method, url, kwargs))
+        return build_fake_response()
+
+    monkeypatch.setattr(RequestManager.get_instance().session, "request", fake_request)
     return calls
+
+
+class MessageCollector(logging.Handler):
+    """Keeps the raw messages, before the handlers of the real logger redact them."""
+
+    def __init__(self):
+        super().__init__(level=logging.DEBUG)
+        self.messages = []
+
+    def emit(self, record):
+        self.messages.append(record.getMessage())
+
+
+@pytest.fixture
+def logged_messages():
+    """Messages logged by the framework during a test, at DEBUG level."""
+    framework_logger = logging.getLogger(FRAMEWORK_LOGGER_NAME)
+    collector = MessageCollector()
+    level_before_the_test = framework_logger.level
+    framework_logger.setLevel(logging.DEBUG)
+    framework_logger.addHandler(collector)
+    yield collector.messages
+    framework_logger.removeHandler(collector)
+    framework_logger.setLevel(level_before_the_test)
 
 
 def test_constructor_and_accessor_return_the_same_instance():
@@ -76,3 +115,45 @@ def test_url_and_timeout_come_from_config(sent):
     assert (method, url) == ("POST", f"{settings.BASE_URL}/gists")
     assert kwargs["timeout"] == settings.REQUEST_TIMEOUT
     assert kwargs["json"] == {"a": 1}
+
+
+@pytest.mark.usefixtures("sent")
+def test_every_request_is_logged_with_method_path_status_and_duration(logged_messages):
+    GitHubClient(token=None).get("/user")
+
+    assert len(logged_messages) == 1
+    assert logged_messages[0].startswith("GET /user -> 200 in ")
+    assert " ms | auth=anonymous | " in logged_messages[0]
+
+
+def test_the_token_is_never_logged(sent, logged_messages):
+    secret_token = "ghp_secretTokenThatMustNeverBeLogged"
+
+    GitHubClient(token=secret_token).get("/user")
+
+    assert len(sent) == 1
+    assert "auth=token" in logged_messages[0]
+    assert all(secret_token not in message for message in logged_messages)
+    assert all("Authorization" not in message for message in logged_messages)
+
+
+@pytest.mark.usefixtures("sent")
+def test_long_bodies_are_shortened_in_the_log(logged_messages):
+    GitHubClient(token=None).post("/gists", json={"content": "x" * 5000})
+
+    assert len(logged_messages[0]) < 5000
+    assert f"({len(str({'content': 'x' * 5000}))} characters)" in logged_messages[0]
+    assert str(MAX_LOGGED_BODY_CHARACTERS) not in logged_messages[0]
+
+
+def test_a_failed_connection_is_logged_as_an_error_and_raised(monkeypatch, logged_messages):
+    def fail_to_connect(*_args, **_kwargs):
+        raise requests.ConnectionError("network unreachable")
+
+    monkeypatch.setattr(RequestManager.get_instance().session, "request", fail_to_connect)
+
+    with pytest.raises(requests.ConnectionError):
+        GitHubClient(token=None).get("/user")
+
+    assert logged_messages[0].startswith("GET /user failed after ")
+    assert "network unreachable" in logged_messages[0]
