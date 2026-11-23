@@ -1,28 +1,38 @@
+
 """Pre and postconditions used by the fixtures in tests/conftest.py.
 
 They replace the pre-request scripts and the "99 - Teardown" folder of the Postman collection.
 """
 import time
+from http import HTTPStatus
 
 from config.settings import Endpoints
 from core import data_factory
+from core.cleanup_logging import log_cleanup_result
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def create_issue(client, tc_id, **extra):
     response = client.post(Endpoints.ISSUES, json={"title": data_factory.issue_title(tc_id), **extra})
     assert response.status_code == 201, f"Precondition failed: could not create the issue ({response.status_code})"
-    return response.json()
+    created_issue = response.json()
+    logger.info("Issue #%d created with title %s", created_issue["number"], created_issue["title"])
+    return created_issue
 
 
 def close_issue(client, number, reason="completed"):
     response = client.patch(Endpoints.issue(number), json={"state": "closed", "state_reason": reason})
     assert response.status_code == 200, f"Precondition failed: could not close #{number} ({response.status_code})"
+    logger.info("Issue #%d closed as %s", number, reason)
     return response.json()
 
 
 def lock_issue(client, number, reason="resolved"):
     response = client.put(Endpoints.issue_lock(number), json={"lock_reason": reason})
     assert response.status_code == 204, f"Precondition failed: could not lock #{number} ({response.status_code})"
+    logger.info("Issue #%d locked as %s", number, reason)
 
 
 def cleanup_issues(client, numbers):
@@ -30,8 +40,14 @@ def cleanup_issues(client, numbers):
     It does not raise: a failed cleanup must not hide the real result of the test."""
     for number in numbers:
         response = client.patch(Endpoints.issue(number), json={"state": "closed", "state_reason": "not_planned"})
-        if response.status_code != 200:
-            print(f"[Cleanup] Could not close issue #{number}: {response.status_code}")
+        log_cleanup_result(
+            logger,
+            f"issue #{number}",
+            response,
+            action_done="closed as not_planned",
+            expected_status=HTTPStatus.OK,
+            tolerated_status=None,
+        )
     numbers.clear()
 
 
@@ -40,6 +56,9 @@ def wait_until(condition, timeout=15, interval=1):
     deadline = time.monotonic() + timeout
     while True:
         result = condition()
-        if result or time.monotonic() > deadline:
+        if result:
+            return result
+        if time.monotonic() > deadline:
+            logger.warning("The condition was still not met after waiting %s seconds", timeout)
             return result
         time.sleep(interval)
