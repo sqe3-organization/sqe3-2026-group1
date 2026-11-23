@@ -10,10 +10,30 @@ run (valid, invalid, anonymous, repo-only, no-admin), so the token travels with 
 GitHubClient (core/api_client.py) keeps one token and delegates the HTTP call to this class.
 """
 import threading
+import time
 
 import requests
 
 from config import settings
+from core.logger import get_logger
+
+logger = get_logger(__name__)
+
+MAX_LOGGED_BODY_CHARACTERS = 500
+MILLISECONDS_PER_SECOND = 1000
+
+
+def shorten_for_log(value):
+    """Long bodies would make the log unreadable, so only the beginning is kept."""
+    text = str(value)
+    if len(text) <= MAX_LOGGED_BODY_CHARACTERS:
+        return text
+    return f"{text[:MAX_LOGGED_BODY_CHARACTERS]}... ({len(text)} characters)"
+
+
+def milliseconds_since(started_at):
+    """Whole milliseconds elapsed since a time.perf_counter() reading."""
+    return round((time.perf_counter() - started_at) * MILLISECONDS_PER_SECOND)
 
 
 class RequestManager:
@@ -64,4 +84,31 @@ class RequestManager:
         if token:
             request_headers["Authorization"] = f"Bearer {token}"
         kwargs.setdefault("timeout", self.timeout)
-        return self.session.request(method, f"{self.base_url}{path}", headers=request_headers, **kwargs)
+
+        endpoint = f"{method} {path}"
+        started_at = time.perf_counter()
+        try:
+            response = self.session.request(
+                method, f"{self.base_url}{path}", headers=request_headers, **kwargs
+            )
+        except requests.RequestException as error:
+            duration_ms = milliseconds_since(started_at)
+            logger.error("%s failed after %d ms | %s", endpoint, duration_ms, error)
+            raise
+        auth_label = "token" if token else "anonymous"
+        self._log_exchange(endpoint, auth_label, kwargs, response, milliseconds_since(started_at))
+        return response
+
+    @staticmethod
+    def _log_exchange(endpoint, auth_label, request_kwargs, response, duration_ms):
+        """One DEBUG line per request. The token is never logged, only whether one was sent."""
+        logger.debug(
+            "%s -> %s in %d ms | auth=%s | params=%s | request_body=%s | response_body=%s",
+            endpoint,
+            response.status_code,
+            duration_ms,
+            auth_label,
+            request_kwargs.get("params"),
+            shorten_for_log(request_kwargs.get("json")),
+            shorten_for_log(response.text),
+        )

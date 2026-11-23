@@ -1,3 +1,4 @@
+
 """Helper functions to prepare and clean up Gists during the tests.
 
 These functions replace the Setup and 99 - Teardown folders from Postman.
@@ -6,6 +7,10 @@ These functions replace the Setup and 99 - Teardown folders from Postman.
 from config import settings
 from config.settings import Endpoints
 from core import data_factory
+from core.cleanup_logging import log_cleanup_result
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 TEST_PREFIX = "qa-pm-"
 MAIN_FILE = "hello.py"
@@ -34,7 +39,9 @@ def create_gist(client, tc_id, files=None, public=False, **extra):
         f"Could not create the test Gist: {response.status_code}"
     )
 
-    return response.json()
+    created_gist = response.json()
+    logger.info("Gist %s created with public=%s", created_gist["id"], public)
+    return created_gist
 
 
 def get_gist(client, gist_id):
@@ -51,12 +58,7 @@ def cleanup_gists(client, gist_ids):
     """
     for gist_id in gist_ids:
         response = delete_gist(client, gist_id)
-
-        if response.status_code not in (204, 404):
-            print(
-                f"[Cleanup] Could not delete Gist '{gist_id}': "
-                f"{response.status_code}"
-            )
+        log_cleanup_result(logger, f"gist {gist_id}", response)
 
     gist_ids.clear()
 
@@ -69,6 +71,7 @@ def remove_leftover_gists(client):
     response = client.get(Endpoints.GISTS, params={"per_page": 100})
 
     if response.status_code != 200:
+        logger.warning("Could not list the gists to look for leftovers | status=%s", response.status_code)
         return
 
     for gist in response.json():
@@ -76,3 +79,4 @@ def remove_leftover_gists(client):
 
         if description.startswith(TEST_PREFIX):
             delete_gist(client, gist["id"])
+            logger.warning("Leftover gist from a previous run deleted: %s", gist["id"])

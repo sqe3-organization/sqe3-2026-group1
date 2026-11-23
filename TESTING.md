@@ -34,6 +34,17 @@ pytest -m "negative or boundary"         # by type of test
 pytest --html=reports/report.html --self-contained-html --junitxml=reports/junit.xml
 ```
 
+## Logs and report
+
+Every run writes a log file in `logs/` (console and file, level set by `LOG_LEVEL` in `.env`). A report can be generated from it:
+
+```bash
+LOG_LEVEL=DEBUG pytest                   # DEBUG also records every request and its time
+python -m core.log_report                # report of the newest log, saved in reports/
+```
+
+The conventions (levels, format, wording, what is never logged) are in [docs/logger-conventions.md](docs/logger-conventions.md).
+
 ## Structure
 
 ```
