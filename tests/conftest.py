@@ -10,6 +10,7 @@ import pytest
 
 from config import settings
 from core.api_client import GitHubClient
+from core.classification import decide_markers_to_add
 from core.logger import get_current_log_file, get_file_only_logger
 from core.request_manager import RequestManager
 from core.issue_helpers import cleanup_issues, close_issue, create_issue, lock_issue
@@ -21,8 +22,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 reports_by_test = {}  # test id -> {phase: pytest report}, until the teardown phase finishes
 
 
+def classify_collected_tests(items):
+    """Adds the area, type, priority and stage markers described in core/classification.py."""
+    for item in items:
+        written_marker_names = {marker.name for marker in item.iter_markers()}
+        for marker_name in decide_markers_to_add(written_marker_names, item.path):
+            item.add_marker(marker_name)
+
+
 def pytest_collection_modifyitems(config, items):
-    """pytest hook: skip the tests that need a token when GITHUB_TOKEN is empty."""
+    """pytest hook: classify every test and skip the ones that need a token when GITHUB_TOKEN is empty."""
+    classify_collected_tests(items)
     if settings.TOKEN:
         return
     skip = pytest.mark.skip(reason="GITHUB_TOKEN is empty in .env")
