@@ -1,3 +1,4 @@
+
 # GitHub Issues API - pytest framework (SQE3, Lab A.3)
 
 API tests for the **Issues** feature of the GitHub REST API, migrated from the Lab 2 Postman collection (30 test cases).
@@ -29,8 +30,11 @@ Without a token, only the tests marked `no_token` and the POCs run; the rest are
 ```bash
 pytest                                   # everything
 pytest tests/poc                         # proofs of concept (no token needed)
-pytest -m smoke                          # one happy path per endpoint
+pytest -m smoke                          # smoke stage: one happy path per endpoint
+pytest -m regression                     # regression stage: every test of the areas
+pytest -m "p1 or p2"                     # by priority (p1 high, p2 medium, p3 low)
 pytest -m "negative or boundary"         # by type of test
+pytest -m "labels and p1"                # by area and priority
 pytest --html=reports/report.html --self-contained-html --junitxml=reports/junit.xml
 ```
 
@@ -54,6 +58,7 @@ core/assertions.py      common checks, schema validation, error checks
 core/schemas.py         issue and error JSON schemas
 core/data_factory.py    random data with Faker
 core/issue_helpers.py   pre/postconditions (create, close, lock, cleanup, wait_until)
+core/classification.py  rules that give each test its area, type, priority and stage
 tests/conftest.py       fixtures (hooks) shared by all tests
 tests/poc/              proofs of concept of requests and pytest
 tests/issues/           one file per endpoint: auth, post, patch, get, lock, e2e
@@ -62,13 +67,13 @@ tests/issues/           one file per endpoint: auth, post, patch, get, lock, e2e
 ## Conventions
 
 - Files `test_<endpoint>.py`; functions `test_<tc_id>_verify_that_...`, so the Lab 1 ID shows in the report.
-- Markers: `smoke`, `negative`, `boundary`, `e2e`, `no_token` (declared in `pytest.ini`, `--strict-markers` on).
+- Markers written in the tests: `smoke`, `negative`, `boundary`, `e2e`, `no_token`. Added automatically when pytest collects the tests: `happy_path`, `p1`, `p2`, `p3`, `regression` and the area (`issues`, `labels`...). All are declared in `pytest.ini` (`--strict-markers` on). The rules are in [docs/test-organization.md](docs/test-organization.md).
 - Every test checks status code, headers, body and, where it applies, schema and data integrity (a second GET).
 - Each test creates its own data through fixtures and cleans it up after `yield`. GitHub does not allow deleting issues, so cleanup closes them as `not_planned`.
 
 ---
 
-# Labels and Milestones 
+# Labels and Milestones
 
 API tests for the **Labels** and **Milestones** features, migrated from the Lab 2 Postman collection: 49 test cases (20 for Labels and 29 for Milestones). They use the same framework as the Issues tests.
 
@@ -145,7 +150,7 @@ See the [official GitHub Gists API documentation](https://docs.github.com/en/res
 pytest tests/gists                                  # All the Gists tests
 pytest tests/gists -m "negative or boundary"        # By test type
 pytest tests/gists/test_gists_patch.py -k patch_004 # One test case
-pytest tests/poc/test_poc_gists.py                  # Proofs of concept
+pytest tests/poc/test_poc_gists.py                  # Proofs of concepts
 ```
 
 ## Structure
@@ -156,7 +161,7 @@ core/assertions.py           Shared response and error assertions
 tests/gists/conftest.py      Fixtures: gist_ids_to_clean_up, existing_gist,
                              existing_public_gist and deleted_gist
 tests/gists/                 Gists tests: POST, GET, PATCH, DELETE and auth
-tests/poc/test_poc_gists.py  Proofs of concept for Gists
+tests/poc/test_poc_gists.py  Proofs of concepts for Gists
 ```
 
 ## Notes
